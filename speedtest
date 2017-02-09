@@ -1,0 +1,78 @@
+import time
+import pyspeedtest
+import argparse
+
+# Opens a parser to read arguments
+parser = argparse.ArgumentParser()
+
+# Adds the interval parameter to determine time between speed tests
+parser.add_argument("interval",help = "The interval of time between speedtest runs. Should be at least 60 seconds",type = float)
+args = parser.parse_args()
+
+# Sets the start time in machine time
+start_time = str(time.asctime(time.localtime(time.time())))
+
+# Formats the start time to name the file
+start_time_string_1 = start_time.replace(" ","_")
+start_time_string = start_time_string_1.replace(":","_")
+
+
+def main():
+	# Only executes the program if the interval is greater than 50 seconds
+	if (args.interval >= 50.0):
+		
+		# Opens a file to write data
+		txt = open(start_time_string,"w")
+		txt.close()
+		
+		# Sets the time to write
+		last_time = time.time()
+
+		# Writes the initial data point
+		write_test(last_time, 0, 0, 0)
+
+		# Continuous loop until keyboard interrupt
+		while True:
+			# Checks if the interval has elapsed
+			if (time.time() < args.interval + last_time):
+				time.sleep(0.1*args.interval)
+
+			# When time has elapsed
+			else:
+				
+				# Sets a new write time
+				last_time = time.time()
+				
+				# Attemps the speed test
+				try:
+					st = pyspeedtest.SpeedTest()
+					last_ping = st.ping()
+					last_dl = st.download() / 1000000
+					last_ul = st.upload() / 1000000
+					
+					# Writes data to file
+					write_test(last_time, last_ping, last_dl, last_ul)
+				
+				# Throws exception
+				except:
+					write_test(last_time,0,0,0)
+				
+				# Sleeps for a significant amount of time to prevent continuous looping
+				time.sleep(args.interval - 50.0)
+
+			
+# Writes arguments into the data file			
+def write_test(time, ping, dl, ul):
+    txt = open(start_time_string, "a")
+    txt.write(str(time))
+    txt.write("\t")
+    txt.write(str(ping))
+    txt.write("\t")
+    txt.write(str(dl))
+    txt.write("\t")
+    txt.write(str(ul))
+    txt.write("\n")
+    txt.close()			
+	
+# Runs program	
+main()
